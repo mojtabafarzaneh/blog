@@ -7,15 +7,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mojtabafarzaneh/blog/pkg/config"
+	"github.com/mojtabafarzaneh/blog/pkg/database"
+	"github.com/mojtabafarzaneh/blog/pkg/handler"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(ServeCmd)
 }
 
-var versionCmd = &cobra.Command{
+var ServeCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "serve app on the dev server",
 	Long:  "application will be served on the port and host provided in config.yaml file",
@@ -29,6 +31,8 @@ func Serve() {
 
 	configs := config.Get()
 
+	database.Connect()
+
 	router := gin.Default()
 	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -36,8 +40,9 @@ func Serve() {
 			"app name": viper.Get("App.Name"),
 		})
 	})
+	c := handler.NewControler()
 
-	//html.LoadHTML(router)
+	router.GET("/articles", c.HandleGetArticles)
 
 	if err := router.Run(fmt.Sprintf("%s:%s", configs.Server.Host, configs.Server.Port)); err != nil {
 		log.Fatal(err)
